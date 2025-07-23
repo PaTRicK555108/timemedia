@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Watermark Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    #imageCanvas { display: none; }
+    input, select { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>Upload Images to Add Watermark</h2>
+  <input type="file" id="imageInput" accept="image/*" multiple>
+  <select id="logoSelect">
+    <option value="DVBT2">DVBT2</option>
+    <option value="EgyMedia">EgyMedia</option>
+    <option value="both">Both</option>
+  </select>
+  <canvas id="imageCanvas"></canvas>
+  <button onclick="downloadImages()">Download Watermarked Images</button>
+
+  <script>
+    const imageInput = document.getElementById('imageInput');
+    const logoSelect = document.getElementById('logoSelect');
+    const canvas = document.getElementById('imageCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function loadImage(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.src = src;
+      });
+    }
+
+    async function drawAndDownload(image, logo, filename) {
+      canvas.width = image.width;
+      canvas.height = image.height;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0);
+      ctx.drawImage(logo, 0, 0, image.width, image.height);
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = canvas.toDataURL();
+      link.click();
+    }
+
+    async function downloadImages() {
+      const selectedLogo = logoSelect.value;
+      const files = imageInput.files;
+      if (!files.length) return;
+
+      for (const file of files) {
+        const originalFilename = file.name.replace(/\.[^/.]+$/, '');
+        const image = await loadImage(URL.createObjectURL(file));
+
+        if (selectedLogo === 'DVBT2' || selectedLogo === 'EgyMedia') {
+          const logo = selectedLogo === 'DVBT2' ? 'dvbt2.png' : 'egymedia.png';
+          const loadedLogo = await loadImage(logo);
+          await drawAndDownload(image, loadedLogo, `${originalFilename}_${selectedLogo}.png`);
+        } else if (selectedLogo === 'both') {
+          const logo1 = await loadImage('dvbt2.png');
+          const logo2 = await loadImage('egymedia.png');
+          await drawAndDownload(image, logo1, `${originalFilename}_DVBT2.png`);
+          await drawAndDownload(image, logo2, `${originalFilename}_EgyMedia.png`);
+        }
+      }
+    }
+  </script>
+</body>
+</html>

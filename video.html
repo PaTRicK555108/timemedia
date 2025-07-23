@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Watermark Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    input, select, button { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>Upload Video to Add Watermark</h2>
+  <input type="file" id="videoInput" accept="video/*">
+  <select id="watermarkSelect">
+    <option value="dvbt2.png">DVBT2</option>
+    <option value="egymedia.png">EgyMedia</option>
+    <option value="timemedia.png">TimeMedia</option>
+  </select>
+  <button onclick="processVideo()">Download Watermarked Video</button>
+
+  <script>
+    async function loadImage(src) {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => resolve(img);
+        img.src = src;
+      });
+    }
+
+    async function processVideo() {
+      const file = document.getElementById('videoInput').files[0];
+      if (!file) return;
+
+      const video = document.createElement('video');
+      video.src = URL.createObjectURL(file);
+      video.crossOrigin = 'anonymous';
+      video.muted = true;
+      video.play();
+
+      const watermark = await loadImage(document.getElementById('watermarkSelect').value);
+
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      video.addEventListener('loadedmetadata', () => {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        const stream = canvas.captureStream();
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+        const chunks = [];
+
+        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
+        mediaRecorder.onstop = async () => {
+          const blob = new Blob(chunks, { type: 'video/webm' });
+          const webmUrl = URL.createObjectURL(blob);
+
+          const a = document.createElement('a');
+          a.href = webmUrl;
+          a.download = `${file.name.replace(/\.[^/.]+$/, '')}_${document.getElementById('watermarkSelect').value.split('.')[0]}.webm`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(video.src);
+          URL.revokeObjectURL(webmUrl);
+        };
+
+        mediaRecorder.start();
+
+        const draw = () => {
+          if (!video.paused && !video.ended) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            ctx.drawImage(watermark, 0, 0, canvas.width, canvas.height);
+            requestAnimationFrame(draw);
+          } else {
+            mediaRecorder.stop();
+          }
+        };
+        draw();
+      });
+    }
+  </script>
+</body>
+</html>

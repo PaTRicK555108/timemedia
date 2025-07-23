@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Image Watermark Tool</title>
+  <style>
+    body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+    #imageCanvas { display: none; }
+    input, select { margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h2>Upload Images to Add Watermark</h2>
+  <input type="file" id="imageInput" accept="image/*" multiple>
+  <label>
+    <input type="checkbox" id="autoCrop"> Auto crop to 16:9<br>
+    <!--input type="checkbox" id="new"> New template<br-->
+    <input type="checkbox" id="fb">Facebook<br>
+    <select id="bein"> 
+    <option value="null" style="display:none;">None</option>
+    <option value="1">beIN Sports 1</option>
+    <option value="2">beIN Sports 2</option>
+    <option value="6">beIN Sports 6</option>
+    </select>
+  </label>
+  <canvas id="imageCanvas"></canvas>
+  <button onclick="downloadImages()">Download Watermarked Images</button>
+
+<script>
+  const imageInput = document.getElementById('imageInput');
+  const autoCrop = document.getElementById('autoCrop');
+ // const newT = document.getElementById('new');
+  const fb = document.querySelector("#fb");
+  const bein = document.getElementById('bein');
+  const canvas = document.getElementById('imageCanvas');
+  const ctx = canvas.getContext('2d');
+
+  function loadImage(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = src;
+    });
+  }
+
+  function cropTo16by9(image) {
+    const targetRatio = 16 / 9;
+    const imageRatio = image.width / image.height;
+
+    if (Math.abs(imageRatio - targetRatio) < 0.01) {
+      return { sx: 0, sy: 0, sw: image.width, sh: image.height }; // Already 16:9
+    }
+
+    if (imageRatio > targetRatio) {
+      const newWidth = image.height * targetRatio;
+      const sx = (image.width - newWidth) / 2;
+      return { sx, sy: 0, sw: newWidth, sh: image.height };
+    } else {
+      const newHeight = image.width / targetRatio;
+      const sy = (image.height - newHeight) / 2;
+      return { sx: 0, sy, sw: image.width, sh: newHeight };
+    }
+  }
+
+  async function drawAndDownload(image, logo, filename, beinLogo = null) {
+    let sx = 0, sy = 0, sw = image.width, sh = image.height;
+
+    if (autoCrop.checked) {
+      ({ sx, sy, sw, sh } = cropTo16by9(image));
+    }
+
+    canvas.width = sw;
+    canvas.height = sh;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+    ctx.drawImage(logo, 0, 0, canvas.width, canvas.height);
+
+    if (beinLogo) {
+      ctx.drawImage(beinLogo, 0, 0, canvas.width, canvas.height);
+    }
+
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL();
+    link.click();
+  }
+
+  async function downloadImages() {
+    const files = imageInput.files;
+    if (!files.length) return;
+
+    for (const file of files) {
+      const originalFilename = file.name.replace(/\.[^/.]+$/, '');
+      const image = await loadImage(URL.createObjectURL(file));
+      const logo = await loadImage(fb.checked ? 'timemedia-watermark-3.png' : 'timemedia-watermark-4.png');
+
+      // Load bein watermark if selected
+      let beinLogo = null;
+      const beinValue = bein.value;
+      if (beinValue !== "null") {
+        try {
+          beinLogo = await loadImage(`bein${beinValue}.png`);
+        } catch (err) {
+          console.error(`Error loading beIN watermark: bein${beinValue}.png`, err);
+        }
+      }
+
+      await drawAndDownload(image, logo, `${originalFilename}_TimeMedia.png`, beinLogo);
+    }
+  }
+</script>
+
+</body>
+</html>
