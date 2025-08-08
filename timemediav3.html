@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Image Watermark Tool</title>
+  <title>Time Media Watermark Tool</title>
   <style>
     body { font-family: Arial, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
     #imageCanvas { display: none; }
@@ -19,6 +19,7 @@
     <input type="checkbox" id="fb">Facebook<br>
     <select id="bein"> 
     <option value="null" style="display:none;">None</option>
+    <option value="11">ON Sport 1</option>
     <option value="1">beIN Sports 1</option>
     <option value="2">beIN Sports 2</option>
     <option value="6">beIN Sports 6</option>
@@ -99,11 +100,17 @@
       // Load bein watermark if selected
       let beinLogo = null;
       const beinValue = bein.value;
-      if (beinValue !== "null") {
+      if (beinValue !== "null" && Number(beinValue) < 10) {
         try {
           beinLogo = await loadImage(`bein${beinValue}.png`);
         } catch (err) {
           console.error(`Error loading beIN watermark: bein${beinValue}.png`, err);
+        }
+      } else if (beinValue !== null & Number(beinValue) > 10) {
+        try {
+          beinLogo = await loadImage(`on_sport_${beinValue}.png`);
+        } catch (err) {
+          console.error(`Error loading watermark: {beinValue}.png`, err);
         }
       }
 
