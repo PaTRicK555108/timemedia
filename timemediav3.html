@@ -16,7 +16,7 @@
   <label>
     <input type="checkbox" id="autoCrop"> Auto crop to 16:9<br>
     <!--input type="checkbox" id="new"> New template<br-->
-    <input type="checkbox" id="fb">ZAMvsAHL<br>
+    <input type="checkbox" id="fb">Morroco<br>
     <select id="bein"> 
     <option value="null" style="display:none;">None</option>
     <option value="13">ONTIME SPORTS 1 (OLD)</option>
@@ -97,7 +97,7 @@
     for (const file of files) {
       const originalFilename = file.name.replace(/\.[^/.]+$/, '');
       const image = await loadImage(URL.createObjectURL(file));
-      const logo = await loadImage(fb.checked ? 'timemedia-watermark-zamahl.png' : 'timemedia-watermark-EG25.png');
+      const logo = await loadImage(fb.checked ? 'morroco.png' : 'timemedia-watermark-EG25.png');
 
       // Load bein watermark if selected
       let beinLogo = null;
